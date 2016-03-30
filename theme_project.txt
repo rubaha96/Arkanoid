@@ -1,0 +1,2 @@
+# New project_python
+# Game: arkanoid with moving elements
