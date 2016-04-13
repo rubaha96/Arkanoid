@@ -3,7 +3,7 @@ import math
 
 class Circle:
 
-    def __init__(self, x = 100, y = 100, r = 10,vx = 0, vy = 13, colour = (255,255,255)):
+    def __init__(self, x = 100, y = 100, r = 10,vx = 0, vy = 170, colour = (255,255,255)):
         """Constructor of Player class"""
         """self.a - acceleration"""
         """self.r - radius"""
@@ -16,6 +16,27 @@ class Circle:
         pygame.draw.circle(game.screen,
                 self.colour,
                 (int(self.x), int(self.y)), self.r)
+    
+        self.x += self.vx * game.delta
+        self.y += self.vy * game.delta
+
+        """Do not let Player get out of the Game window"""
+        if self.x < self.r:
+            if self.vx < 0:
+                self.vx = -self.vx
+            self.x = self.r
+        if self.y < self.r:
+            if self.vy < 0:
+                self.vy = -self.vy
+            self.y = self.r
+        if self.x > game.width - self.r:
+            if self.vx > 0:
+                self.vx = -self.vx
+            self.x = game.width - self.r
+        if self.y > game.height - self.r:
+            if self.vy > 0:
+                self.vy = -self.vy
+            self.y = game.height - self.r
 
 class Platform:
     
