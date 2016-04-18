@@ -1,23 +1,9 @@
 import pygame
 import math
-#from tkinter import
 
-##class Menu_options:
-##    def __init__(self):
-##        menu_ini = Menu(root)
-##        root.config(menu=menu_ini)
-##        start_menu = Menu(menu_ini)
-##        menu_ini.add_cascade(label="Start", menu = start_menu)
-##        menu_ini.add_cascade(label="Help", menu = start_menu)
-##        menu_ini.add_cascade(label="Exit", menu = start_menu)
-
-        #younglinux.info/tkinter/menu.php
-        #Статья с Хабра habrahabr.ru/post/133337/
-        #russianlutheran.org/python/life/life
-        
 class Circle(pygame.sprite.Sprite):
 
-    def __init__(self, x = 100, y = 100, r = 10,vx = 0, vy = 170, colour = (255,255,255)):
+    def __init__(self, x = 200, y = 100, r = 10,vx = 0, vy = 170, colour = (255,255,255)):
         """Constructor of Player class"""
         """self.a - acceleration"""
         """self.r - radius"""
@@ -56,12 +42,21 @@ class Circle(pygame.sprite.Sprite):
                 self.vy = -self.vy
             self.y = game.height - self.r
 
+        """Bouncing ball"""
         if pygame.sprite.collide_rect(self, game.platform_main):
             self.y -= 7
             self.vy = -self.vy
-class Platform:
-    
+            self.vx += game.platform_main.vx
+
+        for z in (game.platform1, game.platform2, game.platform3, game.platform4, game.platform5):
+            if pygame.sprite.collide_rect(self, z):
+                self.y += 7
+                self.vy = -self.vy
+           
+class Platform(pygame.sprite.Sprite):
     def __init__(self, x = 25, y = 10, a = 100, b = 10, colour = (255,0,255)):
+        pygame.sprite.Sprite.__init__(self)
+        self.rect = pygame.Rect(x, y,a,b);
         self.x, self.y, self.a, self.b, self.colour = \
             x, y, a, b, colour
         rect_1_color = (255,0,255)
@@ -74,10 +69,10 @@ class Platform:
                 (int(self.x), int(self.y), self.a, self.b))
 
 class Platform_main(pygame.sprite.Sprite):
-    def __init__(self, x = 270, y = 370, a = 100, b = 10, colour = (255,255,0)):
+    def __init__(self, x = 270, y = 370, a = 100, b = 10, colour = (255,255,0), vx = 0):
         pygame.sprite.Sprite.__init__(self)
-        self.x, self.y, self.a, self.b, self.colour = \
-            x, y, a, b, colour
+        self.x, self.y, self.a, self.b, self.colour, self.vx = \
+            x, y, a, b, colour, vx
         rect_1_color = (255,255,0)
         rect_1_width = 0
 
@@ -91,35 +86,19 @@ class Platform_main(pygame.sprite.Sprite):
     def update(self, game):
         """Update Player state"""
         self.rect = pygame.Rect(self.x, self.y, self.a, self.b)
+        self.vx = 0
         if game.pressed[pygame.K_LEFT]:
-            self.x -= 7
+            self.vx = -100
         if game.pressed[pygame.K_RIGHT]:
-            self.x += 7
+            self.vx = 100
 
+        self.x += self.vx * 3 * game.delta
+        
         """Do not let Player get out of the Game window"""
         if self.x < 0:
             self.x = 0
         if self.x > game.width - self.a:
             self.x = game.width - self.a
-"""
-class Sprite:
-    def __init__(self,xpos,ypos,filename):
-                self.x=xpos
-                self.y=ypos
-                self.bitmap=image.load(filename)
-        def set_position(self,xpos,ypos):
-                self.x=xpos
-                self.y=ypos
-        def render(self):
-                screen.blit(self.bitmap,(self.x,self.y))
-
-       def collSprite(s1_x,s1_y,s2_x,s2_y,size1,size2):
-            if (s1_x<(s2_x+size1+size2)) and (s1_x > (s2_x-size1)) and (s1_y > (s2_y - size1)) and (s1_y < (s2_y+size1+size2)):
-                return 1
-            else:
-                return 0
-"""
-        
         
 class Game:
     def tick(self):
@@ -148,7 +127,6 @@ class Game:
         self.platform5 = Platform(x = 505, y = 10)
         self.platform_main = Platform_main()
         self.ar = pygame.PixelArray(self.screen)
-        #глянуть pubnub (список объектов Units)
 
     def event_handler(self, event):
         """Handling one pygame event"""
@@ -167,6 +145,7 @@ class Game:
 
         self.platform_main.update(self)
         self.player.update(self)
+        self.platform1.update(self)
 
     def render(self):
         """Render the scene"""
