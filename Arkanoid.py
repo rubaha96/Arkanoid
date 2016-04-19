@@ -43,15 +43,16 @@ class Circle(pygame.sprite.Sprite):
             self.y = game.height - self.r
 
         """Bouncing ball"""
-        if pygame.sprite.collide_rect(self, game.platform_main):
+        if pygame.sprite.collide_rect(self, game.platforms[0]):
             self.y -= 7
             self.vy = -self.vy
-            self.vx += game.platform_main.vx
+            self.vx += game.platforms[0].vx
 
-        for z in (game.platform1, game.platform2, game.platform3, game.platform4, game.platform5):
-            if pygame.sprite.collide_rect(self, z):
+        for z in game.platforms:
+            if z != 0 and pygame.sprite.collide_rect(self, game.platforms[z]):
                 self.y += 7
                 self.vy = -self.vy
+                game.to_remove.add(z)
            
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x = 25, y = 10, a = 100, b = 10, colour = (255,0,255)):
@@ -73,6 +74,7 @@ class Platform_main(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.x, self.y, self.a, self.b, self.colour, self.vx = \
             x, y, a, b, colour, vx
+        self.rect = pygame.Rect(self.x, self.y, self.a, self.b)
         rect_1_color = (255,255,0)
         rect_1_width = 0
 
@@ -120,12 +122,15 @@ class Game:
         # set default tool
         self.tool = 'run'
         self.player = Circle()
-        self.platform1 = Platform()
-        self.platform2 = Platform(x = 145, y = 10)
-        self.platform3 = Platform(x = 265, y = 10)
-        self.platform4 = Platform(x = 385, y = 10)
-        self.platform5 = Platform(x = 505, y = 10)
-        self.platform_main = Platform_main()
+        self.platforms = {
+            0: Platform_main(),
+            1: Platform(),
+            2: Platform(x = 145, y = 10),
+            3: Platform(x = 265, y = 10),
+            4: Platform(x = 385, y = 10),
+            5: Platform(x = 505, y = 10)
+        }
+        self.to_remove = set()
         self.ar = pygame.PixelArray(self.screen)
 
     def event_handler(self, event):
@@ -143,21 +148,21 @@ class Game:
         self.tick()
         self.pressed = pygame.key.get_pressed()
 
-        self.platform_main.update(self)
         self.player.update(self)
-        self.platform1.update(self)
+        for i in self.platforms:
+            self.platforms[i].update(self)
+
+        for i in self.to_remove:
+            self.platforms.pop(i)
+        self.to_remove.clear()
 
     def render(self):
         """Render the scene"""
         self.screen.fill((0, 0, 0))
         self.player.render(self)
-        self.platform1.render(self)
-        self.platform2.render(self)
-        self.platform3.render(self)
-        self.platform4.render(self)
-        self.platform5.render(self)
-        self.platform_main.render(self)
-        self.ar[int(self.player.x/10.0),int(self.player.y/10.0)] = (200,200,200)
+        for i in self.platforms:
+            self.platforms[i].render(self)
+        #self.ar[int(self.player.x/10.0),int(self.player.y/10.0)] = (200,200,200)
         pygame.display.flip()
 
     def exit(self):
