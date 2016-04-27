@@ -1,5 +1,6 @@
 import pygame
 import math
+from pygame.locals import *
 
 class Circle(pygame.sprite.Sprite):
 
@@ -53,6 +54,11 @@ class Circle(pygame.sprite.Sprite):
                 self.y += 7
                 self.vy = -self.vy
                 game.to_remove.add(z)
+        flag = 1
+
+        """Losing condition"""
+        if self.y > 389:
+            game.error_message()
            
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x = 25, y = 10, a = 100, b = 10, colour = (255,0,255)):
@@ -131,8 +137,28 @@ class Game:
             5: Platform(x = 505, y = 10)
         }
         self.to_remove = set()
-        self.ar = pygame.PixelArray(self.screen)
+        self.error = False
+        
+        """Losing window"""
+    def error_message(self):
+        cyan = (0, 255, 255)
+        black = (0, 0, 0)
+        pygame.font.init()
+        self.screen.fill(cyan)
+        flag = 0
 
+        font = pygame.font.Font(None, 50)
+        text = font.render('You lose!', True, black)
+        self.screen.blit(text, (200, 200))
+        pygame.display.flip()
+        while(True):
+            for event in pygame.event.get():
+                if event.type == KEYDOWN and event.key == K_SPACE:
+                    pygame.quit()
+
+        "Ending of the cycle" 
+        self.player.y = 200
+        
     def event_handler(self, event):
         """Handling one pygame event"""
         if event.type == pygame.QUIT:
@@ -162,7 +188,6 @@ class Game:
         self.player.render(self)
         for i in self.platforms:
             self.platforms[i].render(self)
-        #self.ar[int(self.player.x/10.0),int(self.player.y/10.0)] = (200,200,200)
         pygame.display.flip()
 
     def exit(self):
