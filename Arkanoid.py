@@ -44,36 +44,55 @@ class Circle(pygame.sprite.Sprite):
             self.y = game.height - self.r
 
         """Bouncing ball"""
-        if pygame.sprite.collide_rect(self, game.platforms[0]):
+        if pygame.sprite.collide_rect(self, game.main_platform):
             self.y -= 7
             self.vy = -self.vy
-            self.vx += game.platforms[0].vx
+            self.vx += game.main_platform.vx
 
         for z in game.platforms:
-            if z != 0 and pygame.sprite.collide_rect(self, game.platforms[z]):
+            if pygame.sprite.collide_rect(self, game.platforms[z]):
                 self.y += 7
                 self.vy = -self.vy
                 game.to_remove.add(z)
         flag = 1
-
-        """Losing condition"""
-        if self.y > 389:
-            game.error_message()
            
 class Platform(pygame.sprite.Sprite):
-    def __init__(self, x = 25, y = 10, a = 100, b = 10, colour = (255,0,255)):
+    def __init__(self, x = 25, y = 10, a = 70, b = 10, vx = 50, colour = (255,0,255)):
         pygame.sprite.Sprite.__init__(self)
-        self.rect = pygame.Rect(x, y,a,b);
-        self.x, self.y, self.a, self.b, self.colour = \
-            x, y, a, b, colour
+        self.x, self.y, self.a, self.b, self.vx, self.colour = \
+            x, y, a, b, vx, colour
+        self.rect = pygame.Rect(self.x, self.y, self.a, self.b)
         rect_1_color = (255,0,255)
         rect_1_width = 0
+
+    def update(self, game):
+        self.rect = pygame.Rect(self.x, self.y, self.a, self.b)
+        self.x += self.vx * game.delta
+
+        if self.x < 0:
+            if self.vx < 0:
+                self.vx = -self.vx
+        if self.x > game.width - self.a:
+            if self.vx > 0:
+                self.vx = - self.vx
+                
+        pl = game.platforms #для удобства
+        for z in pl:
+            if self != pl[z] and pygame.sprite.collide_rect(self, pl[z]):
+                self.x -= self.vx / 7
+                self.vx = -self.vx
 
     def render(self, game):
         """Draw Player on the Game window"""
         pygame.draw.rect(game.screen,
                 self.colour,
-                (int(self.x), int(self.y), self.a, self.b))
+                (int(self.x), int(self.y), self.a, self.b))         
+
+        """Do not let Player get out of the Game window"""
+        if self.x < 0:
+            self.x = 0
+        if self.x > game.width - self.a:
+            self.x = game.width - self.a
 
 class Platform_main(pygame.sprite.Sprite):
     def __init__(self, x = 270, y = 370, a = 100, b = 10, colour = (255,255,0), vx = 0):
@@ -123,36 +142,48 @@ class Game:
         self.clock = pygame.time.Clock()
         self.tool = 'run'
         self.player = Circle()
+
+        self.states = {'Game' : 0, 'Win' : 1, 'Lose' : 2}
+        self.state = self.states['Game']
+
+        self.main_platform = Platform_main()
         self.platforms = {
-            0: Platform_main(),
-            1: Platform(),
+            0: Platform(),
             2: Platform(x = 145, y = 10),
             3: Platform(x = 265, y = 10),
             4: Platform(x = 385, y = 10),
             5: Platform(x = 505, y = 10)
         }
         self.to_remove = set()
-        self.error = False
         
         """Losing window"""
-    def error_message(self):
+    def draw_lose_screen(self):
         cyan = (0, 255, 255)
         black = (0, 0, 0)
         pygame.font.init()
         self.screen.fill(cyan)
-        flag = 0
 
         font = pygame.font.Font(None, 50)
         text = font.render('You lose!', True, black)
         self.screen.blit(text, (200, 200))
-        pygame.display.flip()
-        while(True):
-            for event in pygame.event.get():
-                if event.type == KEYDOWN and event.key == K_SPACE:
-                    pygame.quit()
 
-        "Ending of the cycle" 
-        self.player.y = 200
+    def draw_win_screen(self):
+        cyan = (0, 255, 255)
+        black = (0, 0, 0)
+        pygame.font.init()
+        self.screen.fill(cyan)
+
+        font = pygame.font.Font(None, 50)
+        text = font.render('You win!', True, black)
+        self.screen.blit(text, (200, 200))
+
+    def update_state(self):
+        if not self.platforms:
+            self.state = self.states['Win']
+        elif self.player.y > 389:
+            self.state = self.states['Lose']
+        else:
+            self.state = self.states['Game']
         
     def event_handler(self, event):
         """Handling one pygame event"""
@@ -168,6 +199,7 @@ class Game:
         self.pressed = pygame.key.get_pressed()
 
         self.player.update(self)
+        self.main_platform.update(self)
         for i in self.platforms:
             self.platforms[i].update(self)
 
@@ -177,10 +209,16 @@ class Game:
 
     def render(self):
         """Render the scene"""
-        self.screen.fill((0, 0, 0))
-        self.player.render(self)
-        for i in self.platforms:
-            self.platforms[i].render(self)
+        if self.state == self.states['Game']:            
+            self.screen.fill((0, 0, 0))
+            self.player.render(self)
+            self.main_platform.render(self)
+            for i in self.platforms:
+                self.platforms[i].render(self)
+        elif self.state == self.states['Win']:
+            self.draw_win_screen()
+        elif self.state == self.states['Lose']:
+            self.draw_lose_screen()
         pygame.display.flip()
 
     def exit(self):
@@ -196,7 +234,12 @@ class Game:
         while(self._running):
             for event in pygame.event.get():
                 self.event_handler(event)
-            self.move()
+
+            self.update_state()
+            
+            if self.state == self.states['Game']:
+                self.move()
+
             self.render()
         self.cleanup()
 
