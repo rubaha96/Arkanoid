@@ -5,22 +5,20 @@ from pygame.locals import *
 class Circle(pygame.sprite.Sprite):
 
     def __init__(self, x = 200, y = 100, r = 10,vx = 0, vy = 170, colour = (255,255,255)):
-        """Constructor of Player class"""
-        """self.a - acceleration"""
-        """self.r - radius"""
+        """Constructor of ball class"""
         pygame.sprite.Sprite.__init__(self)
         self.x, self.y, self.r, self.vx, self.vy, self.colour = \
                 x, y, r, vx, vy, colour
         square_1_color = (255,255,255)
 
     def render(self, game):
-        """Draw Player on the Game window"""
+        """Draw ball on the Game window"""
         pygame.draw.circle(game.screen,
                 self.colour,
                 (int(self.x), int(self.y)), self.r)
 
     def update(self, game):
-        """Constant speed of the ball"""
+        """Moving of ball"""
         self.rect = pygame.Rect(self.x - self.r, self.y - self.r, 2 * self.r, 2 * self.r)
         self.x += self.vx * game.delta
         self.y += self.vy * game.delta
@@ -43,32 +41,34 @@ class Circle(pygame.sprite.Sprite):
                 self.vy = -self.vy
             self.y = game.height - self.r
 
-        """Bouncing ball"""
+        """Bouncing conditions for ball"""
         if pygame.sprite.collide_rect(self, game.main_platform):
             self.y -= 7
             self.vy = -self.vy
             self.vx += game.main_platform.vx
 
+        """Displacement of ball from striking with platform"""
         for z in game.platforms:
             if pygame.sprite.collide_rect(self, game.platforms[z]):
                 self.y += 7
                 self.vy = -self.vy
                 game.to_remove.add(z)
-        flag = 1
            
 class Platform(pygame.sprite.Sprite):
-    def __init__(self, x = 25, y = 10, a = 70, b = 10, vx = 50, colour = (255,0,255)):
+
+    def __init__(self, x = 25, y = 10, a = 50, b = 10, vx = 150, colour = (255,0,255)):
+        """Constructor of striking objects class"""
         pygame.sprite.Sprite.__init__(self)
         self.x, self.y, self.a, self.b, self.vx, self.colour = \
             x, y, a, b, vx, colour
         self.rect = pygame.Rect(self.x, self.y, self.a, self.b)
-        rect_1_color = (255,0,255)
-        rect_1_width = 0
-
+        
     def update(self, game):
+        """Moving of platform"""
         self.rect = pygame.Rect(self.x, self.y, self.a, self.b)
         self.x += self.vx * game.delta
 
+        """Bouncing from other platforms"""
         if self.x < 0:
             if self.vx < 0:
                 self.vx = -self.vx
@@ -76,36 +76,35 @@ class Platform(pygame.sprite.Sprite):
             if self.vx > 0:
                 self.vx = - self.vx
                 
-        pl = game.platforms #для удобства
-        for z in pl:
-            if self != pl[z] and pygame.sprite.collide_rect(self, pl[z]):
-                self.x -= self.vx / 7
+        """Displacement of platform from striking"""
+        for z in game.platforms:
+            if self != game.platforms[z] and pygame.sprite.collide_rect(self, game.platforms[z]):
+                self.x -= self.vx / 10
                 self.vx = -self.vx
 
     def render(self, game):
-        """Draw Player on the Game window"""
+        """Draw platforms on the Game window"""
         pygame.draw.rect(game.screen,
                 self.colour,
                 (int(self.x), int(self.y), self.a, self.b))         
 
-        """Do not let Player get out of the Game window"""
+        """Do not let platforms get out of the Game window"""
         if self.x < 0:
             self.x = 0
         if self.x > game.width - self.a:
             self.x = game.width - self.a
 
 class Platform_main(pygame.sprite.Sprite):
+
     def __init__(self, x = 270, y = 370, a = 100, b = 10, colour = (255,255,0), vx = 0):
+        """Constructor of player class"""
         pygame.sprite.Sprite.__init__(self)
         self.x, self.y, self.a, self.b, self.colour, self.vx = \
             x, y, a, b, colour, vx
         self.rect = pygame.Rect(self.x, self.y, self.a, self.b)
-        rect_1_color = (255,255,0)
-        rect_1_width = 0
-
 
     def render(self, game):
-        """Draw Player on the Game window"""
+        """Draw Player platform on the Game window"""
         pygame.draw.rect(game.screen,
                 self.colour,
                 (int(self.x), int(self.y), self.a, self.b))
@@ -128,6 +127,7 @@ class Platform_main(pygame.sprite.Sprite):
             self.x = game.width - self.a
         
 class Game:
+
     def tick(self):
         """Return time in seconds since previous call
         and limit speed of the game to 50 fps"""
@@ -143,40 +143,48 @@ class Game:
         self.tool = 'run'
         self.player = Circle()
 
+        """Finite-state maschine"""
         self.states = {'Game' : 0, 'Win' : 1, 'Lose' : 2}
         self.state = self.states['Game']
 
+        """Dictionary"""
         self.main_platform = Platform_main()
         self.platforms = {
             0: Platform(),
             2: Platform(x = 145, y = 10),
-            3: Platform(x = 265, y = 10),
-            4: Platform(x = 385, y = 10),
-            5: Platform(x = 505, y = 10)
+            3: Platform(x = 285, y = 10),
+            4: Platform(x = 410, y = 10),
+            5: Platform(x = 520, y = 10),
+            6: Platform(x = 100, y = 100),
+            7: Platform(x = 230, y = 100),
+            8: Platform(x = 350, y = 100),
+            9: Platform(x = 490, y = 100),
         }
         self.to_remove = set()
         
         """Losing window"""
     def draw_lose_screen(self):
-        cyan = (0, 255, 255)
+        red = (255, 0, 0)
         black = (0, 0, 0)
         pygame.font.init()
-        self.screen.fill(cyan)
+        self.screen.fill(red)
 
-        font = pygame.font.Font(None, 50)
+        font = pygame.font.Font(None, 70)
         text = font.render('You lose!', True, black)
         self.screen.blit(text, (200, 200))
 
+        """Winning window"""
     def draw_win_screen(self):
-        cyan = (0, 255, 255)
+        blue = (0, 255, 255)
         black = (0, 0, 0)
         pygame.font.init()
-        self.screen.fill(cyan)
+        self.screen.fill(blue)
 
-        font = pygame.font.Font(None, 50)
+        font = pygame.font.Font(None, 70)
         text = font.render('You win!', True, black)
         self.screen.blit(text, (200, 200))
 
+        """Conditions of game ending"""
     def update_state(self):
         if not self.platforms:
             self.state = self.states['Win']
@@ -198,6 +206,7 @@ class Game:
         self.tick()
         self.pressed = pygame.key.get_pressed()
 
+        """Do deleting platforms"""
         self.player.update(self)
         self.main_platform.update(self)
         for i in self.platforms:

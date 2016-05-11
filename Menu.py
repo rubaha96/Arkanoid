@@ -10,7 +10,7 @@ class Menu:
         self.delta = self.clock.tick(60) / 1000.0
 
     def __init__(self):
-        """Constructor of the Game"""
+        """Constructor of the menu window"""
         self._running = True
         self.size = self.width, self.height = 640, 400
         self.screen = pygame.display.set_mode(self.size, pygame.HWSURFACE)
@@ -25,19 +25,18 @@ class Menu:
             self.exit()
 
     def move(self):
-        """Here game objects update their positions"""
+        """Processing of mouse clicking"""
         self.tick()
         self.pressed = pygame.key.get_pressed()
         x = mouse.get_pos()[0]
         y = mouse.get_pos()[1]
         
+        """Analyzing cursor position"""
         if pygame.mouse.get_pressed() == (1, 0, 0):
             if x > 220 and x < 420 and \
                y > 80 and y < 130:
                 game = Arkanoid.Game()
                 game.execute()
-           # if x > 220 and x < 420 and \
-               #y > 150 and y < 210:
             if x > 220 and x < 420 and \
                y > 230 and y < 280:
                 menu.exit()
